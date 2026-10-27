@@ -11,11 +11,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="signalreport",
-            name="authoring_scout_config_id",
-            field=models.UUIDField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name="signalreport",
             name="has_active_implementation_pr",
             field=models.BooleanField(db_default=False, default=False),
         ),
