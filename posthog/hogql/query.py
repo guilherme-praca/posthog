@@ -1090,7 +1090,7 @@ class HogQLQueryExecutor:
 
     def _refreshed_stale_view_columns(self) -> bool:
         view_ids = self.context.referenced_saved_query_ids
-        if not self.refresh_stale_view_columns or not view_ids:
+        if not self.refresh_stale_view_columns or not view_ids or self.user is None:
             return False
         try:
             return bool(data_modeling_api.refresh_view_columns(self.team, view_ids, self.user))
