@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from posthog.dataclasses import frozen
+from posthog.enums import LabeledStrEnum
 
 
 class UnlayerError(Exception):
@@ -105,3 +107,22 @@ class QueuedEmail:
     message_id: str
     # True when an earlier request with the same idempotency key already queued this email.
     replayed: bool = False
+
+
+class EmailDeliveryStatus(LabeledStrEnum):
+    QUEUED = "queued", "Queued"
+    FAILED = "failed", "Failed"
+    SENT = "sent", "Sent"
+    DELIVERED = "delivered", "Delivered"
+    BOUNCED = "bounced", "Bounced"
+    COMPLAINED = "complained", "Complained"
+
+
+@frozen
+class EmailStatus:
+    message_id: str
+    status: EmailDeliveryStatus
+    created_at: datetime
+    status_at: datetime
+    # Why a send failed, or the bounce type of a bounced email.
+    reason: str | None = None
