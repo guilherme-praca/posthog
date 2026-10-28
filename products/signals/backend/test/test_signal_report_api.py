@@ -3089,6 +3089,7 @@ class TestSignalReportListAPI(APIBaseTest):
         assert response.status_code == status.HTTP_200_OK
         row = next(r for r in response.json()["results"] if r["id"] == str(report.id))
         assert row["repo_slug"] is None
+
     @parameterized.expand(
         [
             ("Scout self-improvement: signals-scout-errors - noisy rule", True),
