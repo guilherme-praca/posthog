@@ -7,7 +7,7 @@ It is exercised locally via management commands, and it is also used by the prod
 
 - `select_repo.py`
   Selects the most relevant GitHub repository for a set of signals.
-  - If no eligible repo passes the source-visibility check: returns `None` (report goes to `pending_input`).
+  - If no eligible repo passes the source-visibility check: returns `None`. The `self-driving-github-optional` pilot continues research with project data; other projects go to `pending_input`.
   - If 1 eligible repo passes the source-visibility check: returns it directly (no sandbox needed).
   - If multiple eligible repos pass the source-visibility check: spawns a sandbox agent that uses `gh` CLI to explore candidates and pick the best match. Uses `PostHog/.github` as a small dummy repo for the sandbox clone, since the agent only needs `gh` CLI access (not the repo itself).
   - Output: `RepoSelectionResult(repository: str | None, reason: str)`.
@@ -32,6 +32,7 @@ It is exercised locally via management commands, and it is also used by the prod
   - an optional task-attributed fix verification note for actionable reports
 
   The repository used for research is tracked separately via the `repo_selection` artefact.
+  Pilot research records `research_context` there, omits code-specific instructions without a checkout, and skips ownership lookup and PR-stack planning. Read [GitHub-optional pilot](../../../../docs/internal/signals-pr-lifecycle.md#github-optional-pilot) when changing fallback or enrollment behavior.
 
 - `ownership_reviewers.py`
   Matches a finding's relevant code paths against the repository's `owners.yaml` and CODEOWNERS on the connected GitHub repository. When both name different project members, it suggests the `owners.yaml` owner first and the CODEOWNERS owner second. The artefact write path preserves human pins, exclusions, and confirmed lists during later research.

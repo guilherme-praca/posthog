@@ -194,6 +194,7 @@ class _Recorder:
         spend_failures: int = 0,
         spend_owner_available: bool = True,
         research_errors: list[Exception] | None = None,
+        github_optional: bool = False,
     ) -> None:
         self.gate_answers = gate_answers or {}
         self.fetch_results = fetch_results or [[_signal_data()]]
@@ -206,6 +207,7 @@ class _Recorder:
         self.selected_repository = selected_repository
         self.research_errors = list(research_errors or [])
         self.failure_error_types: list[str | None] = []
+        self.github_optional = github_optional
         self.gate_checks: list[str] = []
         self.fetches = 0
         self.claimed_before_fetch: list[bool] = []
@@ -258,6 +260,10 @@ def test_legacy_agentic_activity_payload_defaults_metrics_to_preserve() -> None:
 
 
 async def _run_summary_workflow(recorder: _Recorder) -> None:
+    @activity.defn(name="github_optional_pilot_activity")
+    async def fake_pilot(team_id: int) -> bool:
+        return recorder.github_optional
+
     @activity.defn(name="check_report_quota_gate_activity")
     async def fake_quota(input: CheckReportQuotaGateInput) -> bool:
         recorder.gate_checks.append(input.stage)
@@ -307,7 +313,7 @@ async def _run_summary_workflow(recorder: _Recorder) -> None:
             priority=None,
             explanation="e",
             already_addressed=False,
-            repository="owner/repo",
+            repository=recorder.selected_repository,
             metrics=recorder.research_metrics,
             checks_snapshot=recorder.checks_snapshot,
             checks_monitoring_enabled=recorder.checks_monitoring_enabled,
@@ -361,6 +367,7 @@ async def _run_summary_workflow(recorder: _Recorder) -> None:
             workflows=[SignalReportSummaryWorkflow],
             activities=[
                 fake_quota,
+                fake_pilot,
                 fake_fetch,
                 fake_has_assigned_signals,
                 fake_mark_in_progress,
@@ -495,11 +502,22 @@ async def test_metric_payload_reaches_the_report_transition(choice, target):
 
 
 @pytest.mark.asyncio
-async def test_no_repository_keeps_report_content_and_logs_the_blocker():
-    recorder = _Recorder(selected_repository=None)
+@pytest.mark.parametrize("github_optional", [False, True])
+async def test_no_repository_researches_only_for_the_pilot(github_optional):
+    recorder = _Recorder(
+        selected_repository=None,
+        github_optional=github_optional,
+        research_choice=ActionabilityChoice.IMMEDIATELY_ACTIONABLE,
+    )
 
     await _run_summary_workflow(recorder)
 
+    if github_optional:
+        assert recorder.researches == 1
+        assert recorder.pending_inputs == []
+        assert recorder.ready_inputs[0].title == "t"
+        assert recorder.failures == 0
+        return
     assert recorder.researches == 0
     assert len(recorder.pending_inputs) == 1
     pending = recorder.pending_inputs[0]

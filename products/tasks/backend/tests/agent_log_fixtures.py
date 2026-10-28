@@ -161,7 +161,7 @@ def _cost_less_usage_update_line(used: int = 1000) -> str:
     )
 
 
-@dataclass
+@dataclass(frozen=False)
 class FakeTaskRun:
     id: str = "run-1"
     log_url: str = "s3://fake/log"
