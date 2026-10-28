@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { mswDecorator } from '~/mocks/browser'
 
 import { makeReport } from '../../__mocks__/inboxMocks'
+import { reportGithubAccessLogic } from '../../logics/reportGithubAccessLogic'
 import { ImplementButton } from './ImplementButton'
 
 const meta: Meta<typeof ImplementButton> = {
@@ -57,6 +58,9 @@ export const ConnectGithub: Story = {
     play: async ({ canvasElement }) => {
         await userEvent.click(await within(canvasElement).findByText('Implement'))
         const implement = await waitFor(() => {
+            if (!reportGithubAccessLogic({ report }).values.repairNeeded) {
+                throw new Error('GitHub connection requirement has not resolved')
+            }
             const button = within(document.body).getByText('Implement with PostHog').closest('button')!
             if (button.getAttribute('aria-disabled') === 'true') {
                 throw new Error('GitHub check has not finished')
