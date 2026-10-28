@@ -57517,6 +57517,11 @@ export namespace Schemas {
       total: number;
     }
 
+    export interface GitHubRepositoryAccessResponse {
+      /** Whether a live GitHub request confirmed repository access. */
+      available: boolean;
+    }
+
     export interface GitHubSource {
       /** Source id: pass back as `source_id` (with `repo`) to read this repository. */
       id: string;
@@ -63950,6 +63955,16 @@ export namespace Schemas {
     }
 
     /**
+     * * `github_optional` - GitHub optional
+     */
+    export type InboxActivationModeEnum = typeof InboxActivationModeEnum[keyof typeof InboxActivationModeEnum];
+
+
+    export const InboxActivationModeEnum = {
+      GithubOptional: 'github_optional',
+    } as const;
+
+    /**
      * * `signals` - Signals
      * * `scouts` - Scouts
      * * `github` - GitHub
@@ -64447,6 +64462,10 @@ export namespace Schemas {
     }
 
     export interface InboxOnboardingDraft {
+      /** Activate the GitHub-optional pilot. Requires project eligibility and leaves automatic implementation off.
+       *
+       * * `github_optional` - GitHub optional */
+      activation_mode?: InboxActivationModeEnum;
       /** Step to resume after returning.
        *
        * * `signals` - Signals
@@ -64537,6 +64556,8 @@ export namespace Schemas {
     }
 
     export interface InboxOnboardingState {
+      /** Whether this project can activate Self-driving without connecting GitHub. */
+      github_optional_available?: boolean;
       /** Whether the current user can receive an in-app notification when this investigation finishes. */
       first_report_completion_notification?: boolean;
       /**
@@ -79948,6 +79969,52 @@ export namespace Schemas {
     } as const;
 
     /**
+     * * `code` - Code context
+     * * `data_only` - Project data
+     */
+    export type ReportResearchModeEnum = typeof ReportResearchModeEnum[keyof typeof ReportResearchModeEnum];
+
+
+    export const ReportResearchModeEnum = {
+      Code: 'code',
+      DataOnly: 'data_only',
+    } as const;
+
+    /**
+     * * `available` - Available
+     * * `no_integration` - Not connected
+     * * `no_repositories` - No repositories
+     * * `selection_unresolved` - No repository selected
+     * * `github_unavailable` - GitHub unavailable
+     */
+    export type ReportRepositoryStatusEnum = typeof ReportRepositoryStatusEnum[keyof typeof ReportRepositoryStatusEnum];
+
+
+    export const ReportRepositoryStatusEnum = {
+      Available: 'available',
+      NoIntegration: 'no_integration',
+      NoRepositories: 'no_repositories',
+      SelectionUnresolved: 'selection_unresolved',
+      GithubUnavailable: 'github_unavailable',
+    } as const;
+
+    export interface ReportResearchContext {
+      /** Whether research had access to a repository.
+       *
+       * * `code` - Code context
+       * * `data_only` - Project data */
+      mode: ReportResearchModeEnum;
+      /** Code availability when the report was researched; not a live integration health check.
+       *
+       * * `available` - Available
+       * * `no_integration` - Not connected
+       * * `no_repositories` - No repositories
+       * * `selection_unresolved` - No repository selected
+       * * `github_unavailable` - GitHub unavailable */
+      repository_status: ReportRepositoryStatusEnum;
+    }
+
+    /**
      * * `unknown` - Unknown
      * * `draft` - Draft
      * * `open` - Open
@@ -80367,6 +80434,8 @@ export namespace Schemas {
       readonly repo_slug: string | null;
       /** Whether this is a scout self-improvement report. Most update a team-owned skill in the skills store, but reports with a selected repository can still produce a pull request. */
       readonly is_self_improvement_report: boolean;
+      /** Evidence available to the latest research pass. Null for legacy reports. */
+      readonly research_context: ReportResearchContext | null;
       readonly is_suggested_reviewer: boolean;
       /** Distinct source products contributing signals to this report (from ClickHouse). */
       readonly source_products: readonly string[];
@@ -103205,6 +103274,8 @@ export namespace Schemas {
       readonly repo_slug: string | null;
       /** Whether this is a scout self-improvement report. Most update a team-owned skill in the skills store, but reports with a selected repository can still produce a pull request. */
       readonly is_self_improvement_report: boolean;
+      /** Evidence available to the latest research pass. Null for legacy reports. */
+      readonly research_context: ReportResearchContext | null;
       readonly is_suggested_reviewer: boolean;
       /** Distinct source products contributing signals to this report (from ClickHouse). */
       readonly source_products: readonly string[];
@@ -136974,6 +137045,14 @@ export namespace Schemas {
      * Optional case-insensitive repository name search query.
      */
     search?: string;
+    };
+
+    export type IntegrationsGithubRepositoryAccessRetrieveParams = {
+    /**
+     * Repository in owner/repo format. Omit to check access to any repository.
+     * @minLength 1
+     */
+    repository?: string;
     };
 
     export type IntegrationsGithubTeamsRetrieveParams = {
